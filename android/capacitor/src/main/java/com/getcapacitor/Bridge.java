@@ -8,9 +8,11 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.LocaleList;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -52,6 +54,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -166,6 +169,28 @@ public class Bridge {
     this.loadWebView();
   }
 
+  private String getLanguage(String[] supportedLanguages, String defaultLanguage) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      LocaleList list = getContext().getResources().getConfiguration().getLocales();
+      for (int i = 0; i < list.size(); i++) {
+        Locale locale = list.get(i);
+        for (String language : supportedLanguages) {
+          if (locale.getLanguage().equals(new Locale(language).getLanguage())) {
+            return language;
+          }
+        }
+      }
+    } else {
+      Locale locale = getContext().getResources().getConfiguration().locale;
+      for (String language : supportedLanguages) {
+        if (locale.getLanguage().equals(new Locale(language).getLanguage())) {
+          return language;
+        }
+      }
+    }
+    return defaultLanguage;
+  }
+
   private void loadWebView() {
     appUrlConfig = this.config.getString("server.url");
     String[] appAllowNavigationConfig = this.config.getArray("server.allowNavigation");
@@ -180,6 +205,8 @@ public class Bridge {
     authorities.add(authority);
 
     String scheme = this.getScheme();
+    String language = getLanguage(new String[]{ "de", "en" }, "en"); // TODO: extract to config
+    Logger.debug("Detected and using language " + language);
 
     localUrl = scheme + "://" + authority;
 
@@ -206,7 +233,7 @@ public class Bridge {
 
     // Start the local web server
     localServer = new WebViewLocalServer(context, this, getJSInjector(), authorities, html5mode);
-    localServer.hostAssets(DEFAULT_WEB_ASSET_DIR);
+    localServer.hostAssets(DEFAULT_WEB_ASSET_DIR + "/" + language);
 
     Logger.debug("Loading app at " + appUrl);
 
