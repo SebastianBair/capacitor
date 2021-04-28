@@ -2,17 +2,43 @@ import Foundation
 
 extension InstanceConfiguration {
     @objc var appStartFileURL: URL {
-        if let path = appStartPath {
-            return appLocation.appendingPathComponent(path)
+        let url = appLocation
+        let languageFound = false
+        for language in Locale.preferredLanguages {
+          let code = String(language.prefix(2))
+          if (code == "de" || code == "en") {
+            url = url.appendingPathComponent(code)
+            languageFound = false
+            break
+          }
         }
-        return appLocation
+        if (!languageFound) {
+          url = url.appendingPathComponent("en")
+        }
+        if let path = appStartPath {
+            return url.appendingPathComponent(path)
+        }
+        return url
     }
 
     @objc var appStartServerURL: URL {
-        if let path = appStartPath {
-            return serverURL.appendingPathComponent(path)
+        let url = serverURL
+        let languageFound = false
+        for language in Locale.preferredLanguages {
+          let code = String(language.prefix(2))
+          if (code == "de" || code == "en") {
+            url = url.appendingPathComponent(code)
+            languageFound = false
+            break
+          }
         }
-        return serverURL
+        if (!languageFound) {
+          url = url.appendingPathComponent("en")
+        }
+        if let path = appStartPath {
+            return url.appendingPathComponent(path)
+        }
+        return url
     }
 
     @objc public func getPluginConfigValue(_ pluginId: String, _ configKey: String) -> Any? {
