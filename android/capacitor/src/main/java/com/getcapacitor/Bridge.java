@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.apache.cordova.ConfigXmlParser;
 import org.apache.cordova.CordovaPreferences;
@@ -194,6 +195,28 @@ public class Bridge {
         return app;
     }
 
+    private String getLanguage(String[] supportedLanguages, String defaultLanguage) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            LocaleList list = getContext().getResources().getConfiguration().getLocales();
+            for (int i = 0; i < list.size(); i++) {
+                Locale locale = list.get(i);
+                for (String language : supportedLanguages) {
+                    if (locale.getLanguage().equals(new Locale(language).getLanguage())) {
+                        return language;
+                    }
+                }
+            }
+        } else {
+            Locale locale = getContext().getResources().getConfiguration().locale;
+            for (String language : supportedLanguages) {
+                if (locale.getLanguage().equals(new Locale(language).getLanguage())) {
+                    return language;
+                }
+            }
+        }
+        return defaultLanguage;
+    }
+
     private void loadWebView() {
         appUrlConfig = this.getServerUrl();
         String[] appAllowNavigationConfig = this.config.getAllowNavigation();
@@ -208,6 +231,8 @@ public class Bridge {
         authorities.add(authority);
 
         String scheme = this.getScheme();
+        String language = getLanguage(new String[]{ "de", "en" }, "en"); // TODO: extract to config
+        Logger.debug("Detected and using language " + language);
 
         localUrl = scheme + "://" + authority;
 
@@ -235,7 +260,7 @@ public class Bridge {
 
         // Start the local web server
         localServer = new WebViewLocalServer(context, this, getJSInjector(), authorities, html5mode);
-        localServer.hostAssets(DEFAULT_WEB_ASSET_DIR);
+        localServer.hostAssets(DEFAULT_WEB_ASSET_DIR + "/" + language);
 
         Logger.debug("Loading app at " + appUrl);
 
