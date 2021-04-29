@@ -44,6 +44,16 @@ public class CAPBridgeViewController: UIViewController, CAPBridgeDelegate, WKScr
   private var handler: CAPAssetHandler?
   
   override public func loadView() {
+    for language in Locale.preferredLanguages {
+      let code = String(language.prefix(2))
+      if (code == "de" || code == "en") {
+        startDir = code
+        break
+      }
+    }
+    if (startDir.isEmpty) {
+      startDir = "en"
+    }
     let configUrl = Bundle.main.url(forResource: "config", withExtension: "xml")
     let configParser = XMLParser(contentsOf: configUrl!)!;
     configParser.delegate = cordovaParser
